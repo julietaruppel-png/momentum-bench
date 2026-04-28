@@ -263,15 +263,7 @@ export default function BenchPage({ params }: { params: { token: string } }) {
                     <div style={{ fontSize: 14, fontWeight: 500, color: '#e8e8ec' }}>{c.first_name} {c.last_name}</div>
                     <div style={{ fontSize: 12, color: '#444455', marginTop: 1 }}>{c.location ?? (c.is_us_based ? 'USA' : 'International')}</div>
                   </div>
-                  <div style={{ display: 'flex', gap: 8, alignItems: 'center', flexShrink: 0 }}>
-                    {c.availability && (
-                      <div style={{ display: 'flex', alignItems: 'center', gap: 5 }}>
-                        <div style={{ width: 6, height: 6, borderRadius: '50%', background: AVAIL_COLOR[c.availability] ?? '#555', flexShrink: 0 }} />
-                        <span style={{ fontSize: 11, color: '#666677' }}>{AVAIL_LABEL[c.availability] ?? c.availability}</span>
-                      </div>
-                    )}
-
-                  </div>
+                  <div style={{ display: 'flex', gap: 8, alignItems: 'center', flexShrink: 0 }}></div>
                 </div>
 
                 {crms.length > 0 && (
