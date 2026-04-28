@@ -36,15 +36,16 @@ const SKILL_FILTERS = [
   { key: 'skill_reporting_dashboards', label: 'Reporting & dashboards' },
   { key: 'skill_data_hygiene', label: 'Data hygiene' },
   { key: 'skill_webhooks', label: 'Webhooks' },
-  { key: 'skill_kpi_reviews', label: 'KPI reviews' },
   { key: 'skill_sales_enablement', label: 'Sales enablement' },
-  { key: 'skill_setter_closer', label: 'Setter / closer process' },
-  { key: 'style_solo_operator', label: 'Solo operator' },
+  { key: 'style_client_facing', label: 'Stakeholder-facing' },
 ]
 
 const REGION_FILTERS = [
   { key: 'us_based', label: 'US-based' },
   { key: 'international', label: 'International (LATAM)' },
+  { key: 'region_europe', label: 'Europe' },
+  { key: 'region_asia', label: 'Asia' },
+  { key: 'region_canada', label: 'Canada' },
 ]
 
 const TZ_FILTERS = [
@@ -54,18 +55,11 @@ const TZ_FILTERS = [
   { key: 'tz_Pacific', label: 'Pacific' },
 ]
 
-const ENGLISH_FILTERS = [
-  { key: 'english_Fluent', label: 'Fluent' },
-  { key: 'english_Advanced', label: 'Advanced' },
-  { key: 'english_Intermediate', label: 'Intermediate' },
-]
-
 const FILTER_GROUPS = [
   { label: 'CRM experience', filters: CRM_FILTERS },
   { label: 'Skills', filters: SKILL_FILTERS },
   { label: 'Region', filters: REGION_FILTERS },
   { label: 'Time zone', filters: TZ_FILTERS },
-  { label: 'English level', filters: ENGLISH_FILTERS },
 ]
 
 const AVAIL_COLOR: Record<string, string> = {
@@ -73,6 +67,13 @@ const AVAIL_COLOR: Record<string, string> = {
   '2 weeks notice': '#a89ff5',
   'Part-time only': '#f5c842',
   'Not available': '#555',
+}
+
+const AVAIL_LABEL: Record<string, string> = {
+  'Available now': 'Available now',
+  '2 weeks notice': 'Available soon',
+  'Part-time only': 'Part-time',
+  'Not available': 'Unavailable',
 }
 
 export default function BenchPage({ params }: { params: { token: string } }) {
@@ -109,9 +110,11 @@ export default function BenchPage({ params }: { params: { token: string } }) {
     for (const [key, on] of Object.entries(activeFilters)) {
       if (!on) continue
       if (key.startsWith('tz_')) { if (!c.time_zones?.includes(key.replace('tz_', ''))) return false; continue }
-      if (key.startsWith('english_')) { if (c.english_level !== key.replace('english_', '')) return false; continue }
       if (key === 'us_based') { if (!c.is_us_based) return false; continue }
-      if (key === 'international') { if (c.is_us_based) return false; continue }
+      if (key === 'international') { if (c.is_us_based || !c.location) return false; const loc = c.location.toLowerCase(); if (['portugal','spain','italy','france','germany','uk','england','ireland','netherlands','poland','europe','india','pakistan','philippines','asia','canada'].some(r => loc.includes(r))) return false; continue }
+      if (key === 'region_europe') { if (!c.location || !['portugal','spain','italy','france','germany','uk','england','ireland','netherlands','poland','lisbon','madrid','rome','paris','berlin','amsterdam'].some(r => c.location!.toLowerCase().includes(r))) return false; continue }
+      if (key === 'region_asia') { if (!c.location || !['india','pakistan','philippines','bangladesh','sri lanka','nepal','singapore','malaysia','indonesia','vietnam','thailand','japan','korea','china','taipei','manila','delhi','mumbai','bangalore','karachi','lahore','islamabad'].some(r => c.location!.toLowerCase().includes(r))) return false; continue }
+      if (key === 'region_canada') { if (!c.location || !['canada','toronto','vancouver','montreal','calgary','ottawa','edmonton'].some(r => c.location!.toLowerCase().includes(r))) return false; continue }
       if (key in c && !(c as any)[key]) return false
     }
     return true
@@ -134,13 +137,10 @@ export default function BenchPage({ params }: { params: { token: string } }) {
     c.skill_reporting_dashboards && 'Reporting',
     c.skill_data_hygiene && 'Data hygiene',
     c.skill_webhooks && 'Webhooks',
-    c.skill_setter_closer && 'Setter/closer',
     c.skill_sales_enablement && 'Sales enablement',
-    c.skill_kpi_reviews && 'KPI reviews',
     c.skill_forecasting && 'Forecasting',
     c.skill_change_management && 'Change mgmt',
-    c.style_solo_operator && 'Solo operator',
-    c.style_client_facing && 'Client-facing',
+    c.style_client_facing && 'Stakeholder-facing',
   ].filter(Boolean) as string[]
 
   if (loading) return (
@@ -267,12 +267,10 @@ export default function BenchPage({ params }: { params: { token: string } }) {
                     {c.availability && (
                       <div style={{ display: 'flex', alignItems: 'center', gap: 5 }}>
                         <div style={{ width: 6, height: 6, borderRadius: '50%', background: AVAIL_COLOR[c.availability] ?? '#555', flexShrink: 0 }} />
-                        <span style={{ fontSize: 11, color: '#666677' }}>{c.availability}</span>
+                        <span style={{ fontSize: 11, color: '#666677' }}>{AVAIL_LABEL[c.availability] ?? c.availability}</span>
                       </div>
                     )}
-                    {c.english_level && (
-                      <span style={{ fontSize: 10, padding: '2px 7px', borderRadius: 4, background: '#18181f', color: '#555566', border: '1px solid #1e1e28' }}>EN: {c.english_level}</span>
-                    )}
+
                   </div>
                 </div>
 
@@ -290,8 +288,8 @@ export default function BenchPage({ params }: { params: { token: string } }) {
                 )}
 
                 {c.recap_summary && (
-                  <p style={{ fontSize: 12, color: '#484858', lineHeight: 1.6, display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden', marginBottom: 9 }}>
-                    {c.recap_summary}
+                  <p style={{ fontSize: 12, color: '#484858', lineHeight: 1.6, marginBottom: 9 }}>
+                    {c.recap_summary.split(/(?<=[.!?])\s+/).slice(0, 2).join(' ')}
                   </p>
                 )}
 
@@ -330,8 +328,6 @@ export default function BenchPage({ params }: { params: { token: string } }) {
 
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 7, marginBottom: 20 }}>
               {[
-                { label: 'English', value: selected.english_level },
-                { label: 'Availability', value: selected.availability },
                 { label: 'Time zones', value: selected.time_zones?.join(', ') },
                 { label: 'Salary expectation', value: selected.desired_salary },
                 { label: 'Based', value: selected.is_us_based ? 'USA' : 'International' },
