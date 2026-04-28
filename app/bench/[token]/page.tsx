@@ -62,19 +62,7 @@ const FILTER_GROUPS = [
   { label: 'Time zone', filters: TZ_FILTERS },
 ]
 
-const AVAIL_COLOR: Record<string, string> = {
-  'Available now': '#4ecf9a',
-  '2 weeks notice': '#a89ff5',
-  'Part-time only': '#f5c842',
-  'Not available': '#555',
-}
 
-const AVAIL_LABEL: Record<string, string> = {
-  'Available now': 'Available now',
-  '2 weeks notice': 'Available soon',
-  'Part-time only': 'Part-time',
-  'Not available': 'Unavailable',
-}
 
 export default function BenchPage({ params }: { params: { token: string } }) {
   const [candidates, setCandidates] = useState<Candidate[]>([])
