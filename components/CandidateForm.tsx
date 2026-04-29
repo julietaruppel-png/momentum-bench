@@ -222,26 +222,6 @@ export default function CandidateForm({ candidate = {}, mode }: Props) {
             <Field label="Fathom recording URL"><input style={inputStyle} value={form.fathom_recording_url} onChange={e => set('fathom_recording_url', e.target.value)} placeholder="https://fathom.video/..." /></Field>
             <Field label="Resume (Google Drive link)"><input style={inputStyle} value={form.resume_drive_url} onChange={e => set('resume_drive_url', e.target.value)} placeholder="https://drive.google.com/..." /></Field>
             <Field label="Screening recap summary"><textarea style={{ ...textareaStyle, minHeight: 120 }} value={form.recap_summary} onChange={e => set('recap_summary', e.target.value)} placeholder="Paste the AI-generated recap summary here..." /></Field>
-            <div style={{ display: 'flex', gap: 12 }}>
-              <Field label="English level" half>
-                <select style={selectStyle} value={form.english_level} onChange={e => set('english_level', e.target.value)}>
-                  <option value="">Select...</option>
-                  <option>Intermediate</option>
-                  <option>Advanced</option>
-                  <option>Fluent</option>
-                </select>
-              </Field>
-              <Field label="Availability" half>
-                <select style={selectStyle} value={form.availability} onChange={e => set('availability', e.target.value)}>
-                  <option value="">Select...</option>
-                  <option>Available now</option>
-                  <option>2 weeks notice</option>
-                  <option>Part-time only</option>
-                  <option>Not available</option>
-                </select>
-              </Field>
-            </div>
-            <Field label="Date screened"><input type="date" style={inputStyle} value={form.date_screened} onChange={e => set('date_screened', e.target.value)} /></Field>
             <Field label="Internal notes (not shown to clients)"><textarea style={textareaStyle} value={form.internal_notes} onChange={e => set('internal_notes', e.target.value)} /></Field>
           </Section>
 
