@@ -37,7 +37,7 @@ function fmt(n: number) {
   return `$${k % 1 === 0 ? k : k.toFixed(1)}k`
 }
 
-const CRM_OPTIONS = ['HubSpot', 'Salesforce', 'Zoho', 'Pipedrive', 'GoHighLevel']
+const CRM_OPTIONS = ['HubSpot', 'Salesforce', 'Zoho', 'Pipedrive', 'GoHighLevel', 'Close.io']
 const SKILL_OPTIONS = ['SQL', 'APIs', 'n8n / Make / Zapier', 'AI tools', 'Migrations', 'Reporting & dashboards', 'Data hygiene', 'Webhooks', 'Sales enablement', 'Stakeholder-facing']
 const REGION_OPTIONS = ['LATAM', 'US', 'Europe', 'Asia', 'Canada']
 const TZ_OPTIONS = ['Eastern', 'Central', 'Mountain', 'Pacific']
@@ -45,6 +45,7 @@ const TZ_OPTIONS = ['Eastern', 'Central', 'Mountain', 'Pacific']
 const CRM_KEY: Record<string, string> = {
   HubSpot: 'skill_hubspot', Salesforce: 'skill_salesforce',
   Zoho: 'skill_zoho', Pipedrive: 'skill_pipedrive', GoHighLevel: 'skill_gohighlevel',
+  'Close.io': 'skill_other_crm',
 }
 const SKILL_KEY: Record<string, string> = {
   SQL: 'skill_sql', APIs: 'skill_api_integrations',
@@ -82,15 +83,19 @@ function FilterSection({ title, items, selected, toggle }: { title: string; item
 }
 
 function MiniBarChart({ data }: { data: { region: string; count: number; color: string }[] }) {
+  const [animated, setAnimated] = useState(false)
+  useEffect(() => { const t = setTimeout(() => setAnimated(true), 100); return () => clearTimeout(t) }, [])
   const max = Math.max(...data.map(d => d.count), 1)
   return (
     <div style={{ display: 'flex', alignItems: 'flex-end', gap: 16, height: 160 }}>
-      {data.map(d => (
+      {data.map((d, i) => (
         <div key={d.region} style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 6, height: '100%', justifyContent: 'flex-end' }}>
           <span style={{ fontSize: 12, color: '#6b7280', fontWeight: 500 }}>{d.count}</span>
           <div style={{
             width: '100%', borderRadius: '5px 5px 0 0', background: d.color,
-            height: `${(d.count / max) * 100}%`, minHeight: 4,
+            height: animated ? `${(d.count / max) * 100}%` : '0%',
+            minHeight: animated ? 4 : 0,
+            transition: `height 0.6s cubic-bezier(0.34,1.56,0.64,1) ${i * 80}ms`,
             boxShadow: `0 0 16px ${d.color}40`,
           }} />
           <span style={{ fontSize: 11, color: '#6b7280' }}>{d.region}</span>
@@ -98,6 +103,42 @@ function MiniBarChart({ data }: { data: { region: string; count: number; color: 
       ))}
     </div>
   )
+}
+
+function CountUp({ target }: { target: number }) {
+  const [val, setVal] = useState(0)
+  useEffect(() => {
+    const duration = 900
+    const start = performance.now()
+    const step = (now: number) => {
+      const p = Math.min((now - start) / duration, 1)
+      const ease = 1 - Math.pow(1 - p, 3)
+      setVal(Math.round(ease * target))
+      if (p < 1) requestAnimationFrame(step)
+    }
+    const t = setTimeout(() => requestAnimationFrame(step), 200)
+    return () => clearTimeout(t)
+  }, [target])
+  return <>{val}</>
+}
+
+function SalaryRange({ min, max }: { min: number; max: number }) {
+  const [curMin, setCurMin] = useState(0)
+  const [curMax, setCurMax] = useState(0)
+  useEffect(() => {
+    const duration = 900
+    const start = performance.now()
+    const animate = (now: number) => {
+      const p = Math.min((now - start) / duration, 1)
+      const ease = 1 - Math.pow(1 - p, 3)
+      setCurMin(Math.round(ease * min))
+      setCurMax(Math.round(ease * max))
+      if (p < 1) requestAnimationFrame(animate)
+    }
+    const t = setTimeout(() => requestAnimationFrame(animate), 200)
+    return () => clearTimeout(t)
+  }, [min, max])
+  return <>{fmt(curMin)} – {fmt(curMax)}</>
 }
 
 type CandidateWithRegion = Candidate & { _region: string }
@@ -206,7 +247,8 @@ export default function BenchPage({ params }: { params: { token: string } }) {
 
       {/* NAV */}
       <div style={{ display: 'flex', alignItems: 'center', padding: '0 32px', height: 56, borderBottom: '1px solid #1e1b4b', background: '#0a0917', position: 'sticky', top: 0, zIndex: 40 }}>
-        <div style={{ fontSize: 11, fontWeight: 700, color: '#6366f1', letterSpacing: '.14em', textTransform: 'uppercase' }}>Sales Momentum</div>
+        <img src="/logo.png" alt="Sales Momentum" style={{ height: 28, width: 'auto', objectFit: 'contain' }} onError={e => { (e.target as HTMLImageElement).style.display='none'; (e.target as HTMLImageElement).nextElementSibling?.setAttribute('style','display:block') }} />
+        <div style={{ display: 'none', fontSize: 11, fontWeight: 700, color: '#6366f1', letterSpacing: '.14em', textTransform: 'uppercase' }}>Sales Momentum</div>
         <div style={{ width: 1, height: 14, background: '#1e1b4b', margin: '0 16px' }} />
         <div style={{ fontSize: 11, color: '#374151' }}>Operator Bench</div>
         <div style={{ flex: 1 }} />
@@ -246,10 +288,9 @@ export default function BenchPage({ params }: { params: { token: string } }) {
                 <div key={r.region} style={{ background: '#13112a', border: `1px solid ${border}`, borderRadius: 13, padding: '20px 18px' }}>
                   <div style={{ fontSize: 9, fontWeight: 700, color: ac, letterSpacing: '.12em', textTransform: 'uppercase', marginBottom: 12 }}>{r.region}</div>
                   <div style={{ fontSize: 18, fontWeight: 700, color: '#f1f5f9', lineHeight: 1.2 }}>
-                    {fmt(r.min)} – {fmt(r.max)}
+                    <SalaryRange min={r.min} max={r.max} />
                     <span style={{ fontSize: 10, fontWeight: 400, color: '#4b5563', marginLeft: 3 }}>/mo</span>
                   </div>
-                  <div style={{ fontSize: 10, color: '#4b5563', marginTop: 10 }}>{r.count} operators</div>
                 </div>
               )
             })}
