@@ -95,7 +95,7 @@ function MiniBarChart({ data }: { data: { region: string; count: number; color: 
             width: '100%', borderRadius: '5px 5px 0 0', background: d.color,
             height: animated ? `${(d.count / max) * 100}%` : '0%',
             minHeight: animated ? 4 : 0,
-            transition: `height 0.6s cubic-bezier(0.34,1.56,0.64,1) ${i * 80}ms`,
+            transition: `height 1.8s cubic-bezier(0.34,1.56,0.64,1) ${i * 150}ms`,
             boxShadow: `0 0 16px ${d.color}40`,
           }} />
           <span style={{ fontSize: 11, color: '#6b7280' }}>{d.region}</span>
@@ -126,7 +126,7 @@ function SalaryRange({ min, max }: { min: number; max: number }) {
   const [curMin, setCurMin] = useState(0)
   const [curMax, setCurMax] = useState(0)
   useEffect(() => {
-    const duration = 900
+    const duration = 2200
     const start = performance.now()
     const animate = (now: number) => {
       const p = Math.min((now - start) / duration, 1)
