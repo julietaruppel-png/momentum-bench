@@ -38,7 +38,7 @@ function fmt(n: number) {
 }
 
 const CRM_OPTIONS = ['HubSpot', 'Salesforce', 'Zoho', 'Pipedrive', 'GoHighLevel', 'Close.io']
-const SKILL_OPTIONS = ['SQL', 'APIs', 'n8n / Make / Zapier', 'AI tools', 'Migrations', 'Reporting & dashboards', 'Data hygiene', 'Webhooks', 'Sales enablement', 'Stakeholder-facing']
+const SKILL_OPTIONS = ['SQL', 'APIs', 'Zapier / Make', 'n8n', 'AI tools', 'Migrations', 'Reporting & dashboards', 'Data hygiene', 'Webhooks', 'Sales enablement', 'Stakeholder-facing']
 const REGION_OPTIONS = ['LATAM', 'US', 'Europe', 'Asia', 'Canada']
 const TZ_OPTIONS = ['Eastern', 'Central', 'Mountain', 'Pacific']
 
@@ -49,7 +49,9 @@ const CRM_KEY: Record<string, string> = {
 }
 const SKILL_KEY: Record<string, string> = {
   SQL: 'skill_sql', APIs: 'skill_api_integrations',
-  'n8n / Make / Zapier': 'skill_automation_tools', 'AI tools': 'skill_ai_tools',
+  'Zapier / Make': 'skill_automation_tools',
+  'n8n': 'skill_n8n',
+  'AI tools': 'skill_ai_tools',
   Migrations: 'skill_crm_migrations', 'Reporting & dashboards': 'skill_reporting_dashboards',
   'Data hygiene': 'skill_data_hygiene', Webhooks: 'skill_webhooks',
   'Sales enablement': 'skill_sales_enablement', 'Stakeholder-facing': 'style_client_facing',
@@ -206,8 +208,8 @@ export default function BenchPage({ params }: { params: { token: string } }) {
   ].filter(Boolean) as string[]
 
   const otherSkillTags = (c: Candidate) => [
-    c.skill_sql && 'SQL', c.skill_automation_tools && 'Automation tools',
-    c.skill_api_integrations && 'APIs', c.skill_ai_tools && 'AI tools',
+    c.skill_sql && 'SQL', c.skill_automation_tools && 'Zapier / Make',
+    (c as any).skill_n8n && 'n8n', c.skill_api_integrations && 'APIs', c.skill_ai_tools && 'AI tools',
     c.skill_crm_migrations && 'Migrations', c.skill_reporting_dashboards && 'Reporting',
     c.skill_data_hygiene && 'Data hygiene', c.skill_webhooks && 'Webhooks',
     c.skill_sales_enablement && 'Sales enablement', (c as any).style_client_facing && 'Stakeholder-facing',

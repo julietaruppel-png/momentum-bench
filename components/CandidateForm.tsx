@@ -113,6 +113,7 @@ export default function CandidateForm({ candidate = {}, mode }: Props) {
     skill_other_crm: candidate.skill_other_crm ?? false,
     // Automation
     skill_automation_tools: candidate.skill_automation_tools ?? false,
+    skill_n8n: (candidate as any).skill_n8n ?? false,
     skill_api_integrations: candidate.skill_api_integrations ?? false,
     skill_webhooks: candidate.skill_webhooks ?? false,
     // Technical
@@ -238,7 +239,8 @@ export default function CandidateForm({ candidate = {}, mode }: Props) {
 
           <Section title="Skills — Automation & integrations">
             {[
-              { key: 'skill_automation_tools', label: 'Automation tools (Zapier / Make / n8n)' },
+              { key: 'skill_automation_tools', label: 'Zapier / Make' },
+              { key: 'skill_n8n', label: 'n8n' },
               { key: 'skill_api_integrations', label: 'API integrations' },
               { key: 'skill_webhooks', label: 'Webhooks' },
             ].map(s => <SkillToggle key={s.key} label={s.label} checked={(form as any)[s.key]} onChange={() => set(s.key, !(form as any)[s.key])} />)}
