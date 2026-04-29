@@ -38,7 +38,7 @@ function fmt(n: number) {
 }
 
 const CRM_OPTIONS = ['HubSpot', 'Salesforce', 'Zoho', 'Pipedrive', 'GoHighLevel', 'Close.io']
-const SKILL_OPTIONS = ['SQL', 'APIs', 'Zapier / Make', 'n8n', 'AI tools', 'Migrations', 'Reporting & dashboards', 'Data hygiene', 'Webhooks', 'Sales enablement', 'Stakeholder-facing']
+const SKILL_OPTIONS = ['SQL', 'APIs', 'Zapier / Make', 'n8n / AI tools', 'Migrations', 'Reporting & dashboards', 'Data hygiene', 'Webhooks', 'Sales enablement', 'Stakeholder-facing']
 const REGION_OPTIONS = ['LATAM', 'US', 'Europe', 'Asia', 'Canada']
 const TZ_OPTIONS = ['Eastern', 'Central', 'Mountain', 'Pacific']
 
@@ -50,8 +50,7 @@ const CRM_KEY: Record<string, string> = {
 const SKILL_KEY: Record<string, string> = {
   SQL: 'skill_sql', APIs: 'skill_api_integrations',
   'Zapier / Make': 'skill_automation_tools',
-  'n8n': 'skill_n8n',
-  'AI tools': 'skill_ai_tools',
+  'n8n / AI tools': 'skill_n8n_or_ai',
   Migrations: 'skill_crm_migrations', 'Reporting & dashboards': 'skill_reporting_dashboards',
   'Data hygiene': 'skill_data_hygiene', Webhooks: 'skill_webhooks',
   'Sales enablement': 'skill_sales_enablement', 'Stakeholder-facing': 'style_client_facing',
@@ -177,7 +176,10 @@ export default function BenchPage({ params }: { params: { token: string } }) {
 
   const filtered = useMemo(() => withRegion.filter(c => {
     if (selCRM.length && !selCRM.every(cr => (c as any)[CRM_KEY[cr]])) return false
-    if (selSkills.length && !selSkills.every(sk => (c as any)[SKILL_KEY[sk]])) return false
+    if (selSkills.length && !selSkills.every(sk => {
+      if (sk === 'n8n / AI tools') return (c as any).skill_n8n || c.skill_ai_tools
+      return (c as any)[SKILL_KEY[sk]]
+    })) return false
     if (selRegions.length && !selRegions.includes(c._region)) return false
     if (selTZ.length && !selTZ.some(tz => c.time_zones?.includes(tz))) return false
     return true
@@ -209,7 +211,8 @@ export default function BenchPage({ params }: { params: { token: string } }) {
 
   const otherSkillTags = (c: Candidate) => [
     c.skill_sql && 'SQL', c.skill_automation_tools && 'Zapier / Make',
-    (c as any).skill_n8n && 'n8n', c.skill_api_integrations && 'APIs', c.skill_ai_tools && 'AI tools',
+    ((c as any).skill_n8n || c.skill_ai_tools) && 'n8n / AI tools',
+    c.skill_api_integrations && 'APIs',
     c.skill_crm_migrations && 'Migrations', c.skill_reporting_dashboards && 'Reporting',
     c.skill_data_hygiene && 'Data hygiene', c.skill_webhooks && 'Webhooks',
     c.skill_sales_enablement && 'Sales enablement', (c as any).style_client_facing && 'Stakeholder-facing',
