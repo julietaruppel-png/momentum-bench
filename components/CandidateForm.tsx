@@ -99,6 +99,7 @@ export default function CandidateForm({ candidate = {}, mode }: Props) {
     proud_project: candidate.proud_project ?? '',
     resume_drive_url: candidate.resume_drive_url ?? '',
     fathom_recording_url: candidate.fathom_recording_url ?? '',
+    recap_doc_url: (candidate as any).recap_doc_url ?? '',
     recap_summary: candidate.recap_summary ?? '',
     english_level: candidate.english_level ?? '',
     availability: candidate.availability ?? '',
@@ -220,9 +221,21 @@ export default function CandidateForm({ candidate = {}, mode }: Props) {
           </Section>
 
           <Section title="Screening (team-added)">
-            <Field label="Fathom recording URL"><input style={inputStyle} value={form.fathom_recording_url} onChange={e => set('fathom_recording_url', e.target.value)} placeholder="https://fathom.video/..." /></Field>
-            <Field label="Resume (Google Drive link)"><input style={inputStyle} value={form.resume_drive_url} onChange={e => set('resume_drive_url', e.target.value)} placeholder="https://drive.google.com/..." /></Field>
-            <Field label="Screening recap summary"><textarea style={{ ...textareaStyle, minHeight: 120 }} value={form.recap_summary} onChange={e => set('recap_summary', e.target.value)} placeholder="Paste the AI-generated recap summary here..." /></Field>
+            <Field label="Fathom recording URL">
+              <input style={inputStyle} value={form.fathom_recording_url} onChange={e => set('fathom_recording_url', e.target.value)} placeholder="https://fathom.video/share/..." />
+              <div style={{ fontSize: 11, color: '#aaa', marginTop: 4 }}>The fathom.video link to the screening call recording</div>
+            </Field>
+            <Field label="Recap doc URL (Google Doc)">
+              <input style={inputStyle} value={(form as any).recap_doc_url} onChange={e => set('recap_doc_url', e.target.value)} placeholder="https://docs.google.com/document/d/..." />
+              <div style={{ fontSize: 11, color: '#aaa', marginTop: 4 }}>The docs.google.com link to the interview recap document</div>
+            </Field>
+            <Field label="Resume (Google Drive link)">
+              <input style={inputStyle} value={form.resume_drive_url} onChange={e => set('resume_drive_url', e.target.value)} placeholder="https://drive.google.com/file/d/..." />
+              <div style={{ fontSize: 11, color: '#aaa', marginTop: 4 }}>The drive.google.com link to the candidate's resume file</div>
+            </Field>
+            <Field label="2–3 sentence screening summary">
+              <textarea style={{ ...textareaStyle, minHeight: 100 }} value={form.recap_summary} onChange={e => set('recap_summary', e.target.value)} placeholder="Write a 2-3 sentence summary of the candidate based on the screening call. This is what clients see on the bench." />
+            </Field>
             <Field label="Internal notes (not shown to clients)"><textarea style={textareaStyle} value={form.internal_notes} onChange={e => set('internal_notes', e.target.value)} /></Field>
           </Section>
 
