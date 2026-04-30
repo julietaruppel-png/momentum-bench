@@ -67,7 +67,7 @@ function Checkbox({ checked, onChange, label }: { checked: boolean; onChange: ()
       }}>
         {checked && <span style={{ color: '#fff', fontSize: 9, lineHeight: 1 }}>✓</span>}
       </div>
-      <span style={{ fontSize: 11, color: checked ? '#a5b4fc' : '#6b7280' }}>{label}</span>
+      <span style={{ fontSize: 13, color: checked ? '#ffffff' : '#9ca3af' }}>{label}</span>
     </div>
   )
 }
@@ -154,6 +154,7 @@ export default function BenchPage({ params }: { params: { token: string } }) {
   const [selRegions, setSelRegions] = useState<string[]>([])
   const [selTZ, setSelTZ] = useState<string[]>([])
   const [expanded, setExpanded] = useState<string | null>(null)
+  const [search, setSearch] = useState('')
 
   useEffect(() => {
     async function load() {
@@ -175,6 +176,10 @@ export default function BenchPage({ params }: { params: { token: string } }) {
   const withRegion = useMemo(() => candidates.map(c => ({ ...c, _region: detectRegion(c) })), [candidates])
 
   const filtered = useMemo(() => withRegion.filter(c => {
+    if (search) {
+      const q = search.toLowerCase()
+      if (!`${c.first_name} ${c.last_name}`.toLowerCase().includes(q)) return false
+    }
     if (selCRM.length && !selCRM.every(cr => (c as any)[CRM_KEY[cr]])) return false
     if (selSkills.length && !selSkills.every(sk => {
       if (sk === 'n8n / AI tools') return (c as any).skill_n8n || c.skill_ai_tools
@@ -183,7 +188,7 @@ export default function BenchPage({ params }: { params: { token: string } }) {
     if (selRegions.length && !selRegions.includes(c._region)) return false
     if (selTZ.length && !selTZ.some(tz => c.time_zones?.includes(tz))) return false
     return true
-  }), [withRegion, selCRM, selSkills, selRegions, selTZ])
+  }), [withRegion, selCRM, selSkills, selRegions, selTZ, search])
 
   const regionCounts = useMemo(() => {
     const counts: Record<string, number> = {}
@@ -328,6 +333,19 @@ export default function BenchPage({ params }: { params: { token: string } }) {
               </div>
             )}
 
+            {/* Search bar */}
+            <div style={{ marginBottom: 16 }}>
+              <input
+                type="text"
+                placeholder="Search by name..."
+                value={search}
+                onChange={e => setSearch(e.target.value)}
+                style={{ width: '100%', padding: '9px 14px', background: '#13112a', border: '1px solid #1e1b4b', borderRadius: 8, color: '#e2e8f0', fontSize: 13, fontFamily: 'inherit', outline: 'none' }}
+                onFocus={e => (e.target as HTMLInputElement).style.borderColor = '#6366f1'}
+                onBlur={e => (e.target as HTMLInputElement).style.borderColor = '#1e1b4b'}
+              />
+            </div>
+
             <div style={{ fontSize: 11, color: '#4b5563', marginBottom: 20 }}>
               {filtered.length} operator{filtered.length !== 1 ? 's' : ''}
             </div>
@@ -389,39 +407,46 @@ export default function BenchPage({ params }: { params: { token: string } }) {
                       </div>
                     </div>
 
-                    <div onClick={() => setExpanded(isOpen ? null : c.id)} style={{ display: 'flex', alignItems: 'center', gap: 5, marginTop: 14, cursor: 'pointer', width: 'fit-content' }}>
-                      <span style={{ fontSize: 11, color: '#6366f1' }}>{isOpen ? 'Hide details' : 'View details'}</span>
-                      <span style={{ fontSize: 10, color: '#6366f1', transform: isOpen ? 'rotate(180deg)' : 'none', display: 'inline-block', transition: 'transform .15s' }}>▾</span>
-                    </div>
+                    {/* Summary always visible */}
+                    {c.recap_summary && (
+                      <p style={{ fontSize: 12, color: '#9ca3af', lineHeight: 1.75, marginTop: 14 }}>{c.recap_summary}</p>
+                    )}
 
-                    {isOpen && (
-                      <div style={{ marginTop: 16, paddingTop: 16, borderTop: '1px solid #1e1b4b' }}>
-                        {c.recap_summary && (
-                          <p style={{ fontSize: 12, color: '#9ca3af', lineHeight: 1.75, marginBottom: 18 }}>{c.recap_summary}</p>
-                        )}
-                        <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap' }}>
-                          {c.fathom_recording_url && (
-                            <a href={c.fathom_recording_url} target="_blank" rel="noreferrer" className="lnk" style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 11, color: '#a5b4fc', background: 'rgba(99,102,241,0.1)', border: '1px solid rgba(99,102,241,0.25)', borderRadius: 6, padding: '6px 12px', transition: 'background .15s' }}>
-                              ▶ Screening Recording
-                            </a>
-                          )}
-                          {(c as any).recap_doc_url && (
-                            <a href={(c as any).recap_doc_url} target="_blank" rel="noreferrer" className="lnk" style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 11, color: '#a5b4fc', background: 'rgba(99,102,241,0.1)', border: '1px solid rgba(99,102,241,0.25)', borderRadius: 6, padding: '6px 12px', transition: 'background .15s' }}>
-                              ☰ Recap Doc
-                            </a>
-                          )}
-                          {c.resume_drive_url && (
-                            <a href={c.resume_drive_url} target="_blank" rel="noreferrer" className="lnk" style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 11, color: '#a5b4fc', background: 'rgba(99,102,241,0.1)', border: '1px solid rgba(99,102,241,0.25)', borderRadius: 6, padding: '6px 12px', transition: 'background .15s' }}>
-                              ↓ Resume
-                            </a>
-                          )}
-                          {c.social_url && (
-                            <a href={c.social_url} target="_blank" rel="noreferrer" className="lnk" style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 11, color: '#a5b4fc', background: 'rgba(99,102,241,0.1)', border: '1px solid rgba(99,102,241,0.25)', borderRadius: 6, padding: '6px 12px', transition: 'background .15s' }}>
-                              ↗ LinkedIn
-                            </a>
-                          )}
+                    {/* Dropdown only for links */}
+                    {(c.fathom_recording_url || (c as any).recap_doc_url || c.resume_drive_url || c.social_url) && (
+                      <>
+                        <div onClick={() => setExpanded(isOpen ? null : c.id)} style={{ display: 'flex', alignItems: 'center', gap: 5, marginTop: 12, cursor: 'pointer', width: 'fit-content' }}>
+                          <span style={{ fontSize: 11, color: '#6366f1' }}>{isOpen ? 'Hide links' : 'View links'}</span>
+                          <span style={{ fontSize: 10, color: '#6366f1', transform: isOpen ? 'rotate(180deg)' : 'none', display: 'inline-block', transition: 'transform .15s' }}>▾</span>
                         </div>
-                      </div>
+
+                        {isOpen && (
+                          <div style={{ marginTop: 10, paddingTop: 10, borderTop: '1px solid #1e1b4b' }}>
+                            <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap' }}>
+                              {c.fathom_recording_url && (
+                                <a href={c.fathom_recording_url} target="_blank" rel="noreferrer" className="lnk" style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 11, color: '#a5b4fc', background: 'rgba(99,102,241,0.1)', border: '1px solid rgba(99,102,241,0.25)', borderRadius: 6, padding: '6px 12px', transition: 'background .15s' }}>
+                                  ▶ Screening Recording
+                                </a>
+                              )}
+                              {(c as any).recap_doc_url && (
+                                <a href={(c as any).recap_doc_url} target="_blank" rel="noreferrer" className="lnk" style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 11, color: '#a5b4fc', background: 'rgba(99,102,241,0.1)', border: '1px solid rgba(99,102,241,0.25)', borderRadius: 6, padding: '6px 12px', transition: 'background .15s' }}>
+                                  ☰ Recap Doc
+                                </a>
+                              )}
+                              {c.resume_drive_url && (
+                                <a href={c.resume_drive_url} target="_blank" rel="noreferrer" className="lnk" style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 11, color: '#a5b4fc', background: 'rgba(99,102,241,0.1)', border: '1px solid rgba(99,102,241,0.25)', borderRadius: 6, padding: '6px 12px', transition: 'background .15s' }}>
+                                  ↓ Resume
+                                </a>
+                              )}
+                              {c.social_url && (
+                                <a href={c.social_url} target="_blank" rel="noreferrer" className="lnk" style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 11, color: '#a5b4fc', background: 'rgba(99,102,241,0.1)', border: '1px solid rgba(99,102,241,0.25)', borderRadius: 6, padding: '6px 12px', transition: 'background .15s' }}>
+                                  ↗ LinkedIn
+                                </a>
+                              )}
+                            </div>
+                          </div>
+                        )}
+                      </>
                     )}
                   </div>
                 )
