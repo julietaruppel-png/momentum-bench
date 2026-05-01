@@ -7,7 +7,7 @@ import { useRouter } from 'next/navigation'
 
 export default function BookmarksPage({ params }: { params: { id: string } }) {
   const [token, setToken] = useState<ClientToken | null>(null)
-  const [candidates, setCandidates] = useState<Candidate[]>([])
+  const [candidates, setCandidates] = useState<Partial<Candidate>[]>([])
   const [bookmarked, setBookmarked] = useState<string[]>([])
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
@@ -47,10 +47,10 @@ export default function BookmarksPage({ params }: { params: { id: string } }) {
 
   const filtered = candidates.filter(c => {
     if (!search) return true
-    return `${c.first_name} ${c.last_name}`.toLowerCase().includes(search.toLowerCase())
+    return `${c.first_name ?? ''} ${c.last_name ?? ''}`.toLowerCase().includes(search.toLowerCase())
   })
 
-  const crmTags = (c: Candidate) => [
+  const crmTags = (c: Partial<Candidate>) => [
     c.skill_hubspot && 'HubSpot', c.skill_salesforce && 'Salesforce',
     c.skill_zoho && 'Zoho', c.skill_pipedrive && 'Pipedrive', c.skill_gohighlevel && 'GoHighLevel',
   ].filter(Boolean) as string[]
@@ -124,7 +124,7 @@ export default function BookmarksPage({ params }: { params: { id: string } }) {
   )
 }
 
-function CandidateRow({ c, checked, toggle, crms }: { c: Candidate; checked: boolean; toggle: (id: string) => void; crms: string[] }) {
+function CandidateRow({ c, checked, toggle, crms }: { c: Partial<Candidate>; checked: boolean; toggle: (id: string) => void; crms: string[] }) {
   return (
     <div
       onClick={() => toggle(c.id)}
