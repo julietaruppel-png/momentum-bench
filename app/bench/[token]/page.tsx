@@ -148,6 +148,8 @@ export default function BenchPage({ params }: { params: { token: string } }) {
   const [candidates, setCandidates] = useState<Candidate[]>([])
   const [loading, setLoading] = useState(true)
   const [validToken, setValidToken] = useState(false)
+  const [bookmarkedIds, setBookmarkedIds] = useState<string[]>([])
+  const [showBookmarked, setShowBookmarked] = useState(false)
   const [tab, setTab] = useState<'overview' | 'candidates'>('overview')
   const [selCRM, setSelCRM] = useState<string[]>([])
   const [selSkills, setSelSkills] = useState<string[]>([])
@@ -158,9 +160,10 @@ export default function BenchPage({ params }: { params: { token: string } }) {
 
   useEffect(() => {
     async function load() {
-      const { data: tok } = await supabase.from('client_tokens').select('id,active').eq('token', params.token).single()
+      const { data: tok } = await supabase.from('client_tokens').select('id,active,bookmarked_candidates').eq('token', params.token).single()
       if (!tok?.active) { setLoading(false); return }
       setValidToken(true)
+      setBookmarkedIds((tok as any).bookmarked_candidates ?? [])
       const { data } = await supabase.from('candidates').select('*').order('first_name')
       setCandidates(data ?? [])
       setLoading(false)
@@ -176,6 +179,7 @@ export default function BenchPage({ params }: { params: { token: string } }) {
   const withRegion = useMemo(() => candidates.map(c => ({ ...c, _region: detectRegion(c) })), [candidates])
 
   const filtered = useMemo(() => withRegion.filter(c => {
+    if (showBookmarked && !bookmarkedIds.includes(c.id)) return false
     if (search) {
       const q = search.toLowerCase()
       if (!`${c.first_name} ${c.last_name}`.toLowerCase().includes(q)) return false
@@ -188,7 +192,7 @@ export default function BenchPage({ params }: { params: { token: string } }) {
     if (selRegions.length && !selRegions.includes(c._region)) return false
     if (selTZ.length && !selTZ.some(tz => c.time_zones?.includes(tz))) return false
     return true
-  }), [withRegion, selCRM, selSkills, selRegions, selTZ, search])
+  }), [withRegion, selCRM, selSkills, selRegions, selTZ, search, showBookmarked, bookmarkedIds])
 
   const regionCounts = useMemo(() => {
     const counts: Record<string, number> = {}
@@ -314,6 +318,27 @@ export default function BenchPage({ params }: { params: { token: string } }) {
           {/* Sidebar */}
           <div style={{ width: 218, borderRight: '1px solid #1e1b4b', padding: '28px 18px', flexShrink: 0, minHeight: 'calc(100vh - 56px)', position: 'sticky', top: 56, alignSelf: 'flex-start', overflowY: 'auto', maxHeight: 'calc(100vh - 56px)' }}>
             <div style={{ fontSize: 9, fontWeight: 700, color: '#374151', letterSpacing: '.12em', textTransform: 'uppercase', marginBottom: 20 }}>Filters</div>
+
+            {/* Bookmarked toggle */}
+            {bookmarkedIds.length > 0 && (
+              <div style={{ marginBottom: 22 }}>
+                <div
+                  onClick={() => setShowBookmarked(p => !p)}
+                  style={{
+                    display: 'flex', alignItems: 'center', gap: 8, padding: '8px 12px',
+                    borderRadius: 8, cursor: 'pointer', marginBottom: 8,
+                    background: showBookmarked ? 'rgba(99,102,241,0.15)' : '#1a1730',
+                    border: `1px solid ${showBookmarked ? 'rgba(99,102,241,0.4)' : '#2e2860'}`,
+                    transition: 'all .15s',
+                  }}
+                >
+                  <span style={{ fontSize: 13 }}>★</span>
+                  <span style={{ fontSize: 13, fontWeight: 600, color: showBookmarked ? '#a5b4fc' : '#8b9cc7' }}>
+                    Bookmarked ({bookmarkedIds.length})
+                  </span>
+                </div>
+              </div>
+            )}
             <FilterSection title="CRM Experience" items={CRM_OPTIONS} selected={selCRM} toggle={toggle(setSelCRM)} />
             <FilterSection title="Time Zone" items={TZ_OPTIONS} selected={selTZ} toggle={toggle(setSelTZ)} />
             <FilterSection title="Region" items={REGION_OPTIONS} selected={selRegions} toggle={toggle(setSelRegions)} />
@@ -376,8 +401,11 @@ export default function BenchPage({ params }: { params: { token: string } }) {
                       </div>
 
                       <div style={{ flex: 1, minWidth: 0 }}>
-                        <div style={{ fontSize: 14, fontWeight: 600, color: '#f1f5f9', marginBottom: 5 }}>
+                        <div style={{ fontSize: 14, fontWeight: 600, color: '#f1f5f9', marginBottom: 5, display: 'flex', alignItems: 'center', gap: 8 }}>
                           {c.first_name} {c.last_name}
+                          {bookmarkedIds.includes(c.id) && (
+                            <span style={{ fontSize: 11, color: '#a5b4fc', background: 'rgba(99,102,241,0.15)', border: '1px solid rgba(99,102,241,0.3)', borderRadius: 4, padding: '1px 6px' }}>★ Bookmarked</span>
+                          )}
                         </div>
 
                         <div style={{ display: 'flex', gap: 7, alignItems: 'center', flexWrap: 'wrap', marginBottom: 10 }}>

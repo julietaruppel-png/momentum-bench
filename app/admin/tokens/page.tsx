@@ -125,6 +125,9 @@ export default function TokensPage() {
                   >
                     {t.active ? 'Disable' : 'Enable'}
                   </button>
+                  <a href={`/admin/tokens/${t.id}/bookmarks`} style={{ fontSize: 12, padding: '6px 14px', border: '1px solid #e0e0e0', borderRadius: 7, background: '#fff', color: '#5b4de8', cursor: 'pointer', fontFamily: 'var(--font-sans)', textDecoration: 'none' }}>
+                    ★ Bookmarks
+                  </a>
                 </div>
                 <div style={{ fontSize: 11, color: '#ccc', marginTop: 6 }}>
                   Created {new Date(t.created_at).toLocaleDateString()}
