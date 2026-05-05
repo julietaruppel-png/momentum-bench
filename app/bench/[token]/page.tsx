@@ -12,19 +12,18 @@ function detectRegion(c: Candidate): string {
   const loc = (c.location ?? '').toLowerCase()
   const canada = ['toronto', 'vancouver', 'montreal', 'calgary', 'ottawa', 'canada']
   const europe = ['london', 'amsterdam', 'berlin', 'paris', 'madrid', 'rome', 'lisbon', 'italy', 'spain', 'france', 'portugal', 'netherlands', 'germany', 'uk', 'europe', 'ireland']
-  const asia = ['india', 'pakistan', 'philippines', 'indonesia', 'singapore', 'delhi', 'mumbai', 'bangalore', 'karachi', 'lahore', 'manila', 'chennai', 'hyderabad', 'pune', 'kolkata', 'cebu', 'asia']
+  const asia = ['india', 'pakistan', 'philippines', 'indonesia', 'singapore', 'delhi', 'mumbai', 'bangalore', 'karachi', 'lahore', 'manila', 'chennai', 'hyderabad', 'pune', 'kolkata', 'cebu', 'asia', 'noida', 'rawalpindi', 'chandigarh', 'jaipur', 'makati']
   if (canada.some(x => loc.includes(x))) return 'Canada'
   if (europe.some(x => loc.includes(x))) return 'Europe'
   if (asia.some(x => loc.includes(x))) return 'Asia'
   return 'LATAM'
 }
 
-// Salary ranges derived from actual candidate data (monthly USD)
 const SALARY_RANGES = [
-  { region: 'LATAM',  min: 2800, max: 5000 },
-  { region: 'US',     min: 5000, max: 10800 },
+  { region: 'LATAM', min: 2800, max: 5000 },
+  { region: 'US', min: 5000, max: 10800 },
   { region: 'Europe', min: 5400, max: 7900 },
-  { region: 'Asia',   min: 1700, max: 3800 },
+  { region: 'Asia', min: 1700, max: 3800 },
   { region: 'Canada', min: 3000, max: 9200 },
 ]
 
@@ -75,7 +74,7 @@ function Checkbox({ checked, onChange, label }: { checked: boolean; onChange: ()
 function FilterSection({ title, items, selected, toggle }: { title: string; items: string[]; selected: string[]; toggle: (v: string) => void }) {
   return (
     <div style={{ marginBottom: 22 }}>
-      <div style={{ fontSize: 9, fontWeight: 700, color: '#4b5563', letterSpacing: '.1em', textTransform: 'uppercase', marginBottom: 10 }}>{title}</div>
+      <div style={{ fontSize: 12, fontWeight: 700, color: '#ffffff', letterSpacing: '.08em', textTransform: 'uppercase', marginBottom: 10 }}>{title}</div>
       {items.map(item => (
         <Checkbox key={item} checked={selected.includes(item)} onChange={() => toggle(item)} label={item} />
       ))}
@@ -106,23 +105,6 @@ function MiniBarChart({ data }: { data: { region: string; count: number; color: 
   )
 }
 
-function CountUp({ target }: { target: number }) {
-  const [val, setVal] = useState(0)
-  useEffect(() => {
-    const duration = 900
-    const start = performance.now()
-    const step = (now: number) => {
-      const p = Math.min((now - start) / duration, 1)
-      const ease = 1 - Math.pow(1 - p, 3)
-      setVal(Math.round(ease * target))
-      if (p < 1) requestAnimationFrame(step)
-    }
-    const t = setTimeout(() => requestAnimationFrame(step), 200)
-    return () => clearTimeout(t)
-  }, [target])
-  return <>{val}</>
-}
-
 function SalaryRange({ min, max }: { min: number; max: number }) {
   const [curMin, setCurMin] = useState(0)
   const [curMax, setCurMax] = useState(0)
@@ -148,8 +130,8 @@ export default function BenchPage({ params }: { params: { token: string } }) {
   const [candidates, setCandidates] = useState<Candidate[]>([])
   const [loading, setLoading] = useState(true)
   const [validToken, setValidToken] = useState(false)
-  const [bookmarkedIds, setBookmarkedIds] = useState<string[]>([])
-  const [showBookmarked, setShowBookmarked] = useState(false)
+  const [smBookmarks, setSmBookmarks] = useState<string[]>([])
+  const [clientBookmarks, setClientBookmarks] = useState<string[]>([])
   const [tab, setTab] = useState<'overview' | 'candidates'>('overview')
   const [selCRM, setSelCRM] = useState<string[]>([])
   const [selSkills, setSelSkills] = useState<string[]>([])
@@ -157,13 +139,18 @@ export default function BenchPage({ params }: { params: { token: string } }) {
   const [selTZ, setSelTZ] = useState<string[]>([])
   const [expanded, setExpanded] = useState<string | null>(null)
   const [search, setSearch] = useState('')
+  const [bookmarkView, setBookmarkView] = useState<'none' | 'sm' | 'client'>('none')
 
   useEffect(() => {
     async function load() {
-      const { data: tok } = await supabase.from('client_tokens').select('id,active,bookmarked_candidates').eq('token', params.token).single()
+      const { data: tok } = await supabase
+        .from('client_tokens').select('id,active,bookmarked_candidates').eq('token', params.token).single()
       if (!tok?.active) { setLoading(false); return }
       setValidToken(true)
-      setBookmarkedIds((tok as any).bookmarked_candidates ?? [])
+      setSmBookmarks((tok as any).bookmarked_candidates ?? [])
+      // Load client bookmarks from localStorage
+      const stored = localStorage.getItem(`bookmarks_${params.token}`)
+      if (stored) setClientBookmarks(JSON.parse(stored))
       const { data } = await supabase.from('candidates').select('*').order('first_name')
       setCandidates(data ?? [])
       setLoading(false)
@@ -171,15 +158,24 @@ export default function BenchPage({ params }: { params: { token: string } }) {
     load()
   }, [params.token])
 
+  const toggleClientBookmark = (id: string) => {
+    setClientBookmarks(prev => {
+      const next = prev.includes(id) ? prev.filter(x => x !== id) : [...prev, id]
+      localStorage.setItem(`bookmarks_${params.token}`, JSON.stringify(next))
+      return next
+    })
+  }
+
   const toggle = (setter: React.Dispatch<React.SetStateAction<string[]>>) => (val: string) =>
     setter(prev => prev.includes(val) ? prev.filter(x => x !== val) : [...prev, val])
 
-  const clearAll = () => { setSelCRM([]); setSelSkills([]); setSelRegions([]); setSelTZ([]) }
+  const clearAll = () => { setSelCRM([]); setSelSkills([]); setSelRegions([]); setSelTZ([]); setBookmarkView('none') }
 
   const withRegion = useMemo(() => candidates.map(c => ({ ...c, _region: detectRegion(c) })), [candidates])
 
   const filtered = useMemo(() => withRegion.filter(c => {
-    if (showBookmarked && !bookmarkedIds.includes(c.id)) return false
+    if (bookmarkView === 'sm' && !smBookmarks.includes(c.id)) return false
+    if (bookmarkView === 'client' && !clientBookmarks.includes(c.id)) return false
     if (search) {
       const q = search.toLowerCase()
       if (!`${c.first_name} ${c.last_name}`.toLowerCase().includes(q)) return false
@@ -192,7 +188,7 @@ export default function BenchPage({ params }: { params: { token: string } }) {
     if (selRegions.length && !selRegions.includes(c._region)) return false
     if (selTZ.length && !selTZ.some(tz => c.time_zones?.includes(tz))) return false
     return true
-  }), [withRegion, selCRM, selSkills, selRegions, selTZ, search, showBookmarked, bookmarkedIds])
+  }), [withRegion, selCRM, selSkills, selRegions, selTZ, search, bookmarkView, smBookmarks, clientBookmarks])
 
   const regionCounts = useMemo(() => {
     const counts: Record<string, number> = {}
@@ -254,6 +250,7 @@ export default function BenchPage({ params }: { params: { token: string } }) {
         ::-webkit-scrollbar-thumb{background:#1e1b4b;border-radius:2px}
         .card-h:hover{border-color:#3730a3 !important}
         .lnk:hover{background:rgba(99,102,241,0.18) !important}
+        .bm-btn:hover{opacity:1 !important}
         @keyframes fadeUp{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}
         .fu{animation:fadeUp .22s ease forwards}
         @keyframes spin{to{transform:rotate(360deg)}}
@@ -261,8 +258,8 @@ export default function BenchPage({ params }: { params: { token: string } }) {
 
       {/* NAV */}
       <div style={{ display: 'flex', alignItems: 'center', padding: '0 32px', height: 56, borderBottom: '1px solid #1e1b4b', background: '#0a0917', position: 'sticky', top: 0, zIndex: 40 }}>
-        <img src="/logo.png" alt="Sales Momentum" style={{ height: 28, width: 'auto', objectFit: 'contain' }} onError={e => { (e.target as HTMLImageElement).style.display='none'; (e.target as HTMLImageElement).nextElementSibling?.setAttribute('style','display:block') }} />
-        <div style={{ display: 'none', fontSize: 11, fontWeight: 700, color: '#6366f1', letterSpacing: '.14em', textTransform: 'uppercase' }}>Sales Momentum</div>
+        <img src="/logo.png" alt="Sales Momentum" style={{ height: 28, width: 'auto', objectFit: 'contain' }}
+          onError={e => { (e.target as HTMLImageElement).style.display = 'none' }} />
         <div style={{ width: 1, height: 14, background: '#1e1b4b', margin: '0 16px' }} />
         <div style={{ fontSize: 11, color: '#374151' }}>Operator Bench</div>
         <div style={{ flex: 1 }} />
@@ -316,29 +313,53 @@ export default function BenchPage({ params }: { params: { token: string } }) {
       {tab === 'candidates' && (
         <div style={{ display: 'flex' }}>
           {/* Sidebar */}
-          <div style={{ width: 218, borderRight: '1px solid #1e1b4b', padding: '28px 18px', flexShrink: 0, minHeight: 'calc(100vh - 56px)', position: 'sticky', top: 56, alignSelf: 'flex-start', overflowY: 'auto', maxHeight: 'calc(100vh - 56px)' }}>
-            <div style={{ fontSize: 9, fontWeight: 700, color: '#374151', letterSpacing: '.12em', textTransform: 'uppercase', marginBottom: 20 }}>Filters</div>
+          <div style={{ width: 224, borderRight: '1px solid #1e1b4b', padding: '28px 18px', flexShrink: 0, minHeight: 'calc(100vh - 56px)', position: 'sticky', top: 56, alignSelf: 'flex-start', overflowY: 'auto', maxHeight: 'calc(100vh - 56px)' }}>
+            <div style={{ fontSize: 12, fontWeight: 700, color: '#ffffff', letterSpacing: '.12em', textTransform: 'uppercase', marginBottom: 20 }}>Filters</div>
 
-            {/* Bookmarked toggle */}
-            {bookmarkedIds.length > 0 && (
-              <div style={{ marginBottom: 22 }}>
+            {/* SM Bookmarks */}
+            {smBookmarks.length > 0 && (
+              <div style={{ marginBottom: 10 }}>
                 <div
-                  onClick={() => setShowBookmarked(p => !p)}
+                  onClick={() => setBookmarkView(bookmarkView === 'sm' ? 'none' : 'sm')}
                   style={{
                     display: 'flex', alignItems: 'center', gap: 8, padding: '8px 12px',
-                    borderRadius: 8, cursor: 'pointer', marginBottom: 8,
-                    background: showBookmarked ? 'rgba(99,102,241,0.15)' : '#1a1730',
-                    border: `1px solid ${showBookmarked ? 'rgba(99,102,241,0.4)' : '#2e2860'}`,
-                    transition: 'all .15s',
+                    borderRadius: 8, cursor: 'pointer',
+                    background: bookmarkView === 'sm' ? 'rgba(99,102,241,0.2)' : '#1a1730',
+                    border: `1px solid ${bookmarkView === 'sm' ? 'rgba(99,102,241,0.5)' : '#2e2860'}`,
+                    transition: 'all .15s', marginBottom: 6,
                   }}
                 >
                   <span style={{ fontSize: 13 }}>★</span>
-                  <span style={{ fontSize: 13, fontWeight: 600, color: showBookmarked ? '#a5b4fc' : '#8b9cc7' }}>
-                    Bookmarked ({bookmarkedIds.length})
-                  </span>
+                  <div style={{ flex: 1 }}>
+                    <div style={{ fontSize: 12, fontWeight: 600, color: bookmarkView === 'sm' ? '#a5b4fc' : '#8b9cc7' }}>Bookmarked by Sales Momentum</div>
+                    <div style={{ fontSize: 10, color: '#4b5563', marginTop: 1 }}>{smBookmarks.length} candidates</div>
+                  </div>
                 </div>
               </div>
             )}
+
+            {/* Client Bookmarks */}
+            <div style={{ marginBottom: 20 }}>
+              <div
+                onClick={() => setBookmarkView(bookmarkView === 'client' ? 'none' : 'client')}
+                style={{
+                  display: 'flex', alignItems: 'center', gap: 8, padding: '8px 12px',
+                  borderRadius: 8, cursor: 'pointer',
+                  background: bookmarkView === 'client' ? 'rgba(99,102,241,0.2)' : '#1a1730',
+                  border: `1px solid ${bookmarkView === 'client' ? 'rgba(99,102,241,0.5)' : '#2e2860'}`,
+                  transition: 'all .15s',
+                }}
+              >
+                <span style={{ fontSize: 13 }}>🔖</span>
+                <div style={{ flex: 1 }}>
+                  <div style={{ fontSize: 12, fontWeight: 600, color: bookmarkView === 'client' ? '#a5b4fc' : '#8b9cc7' }}>Bookmarked by you</div>
+                  <div style={{ fontSize: 10, color: '#4b5563', marginTop: 1 }}>{clientBookmarks.length} saved</div>
+                </div>
+              </div>
+            </div>
+
+            <div style={{ borderBottom: '1px solid #1e1b4b', marginBottom: 20 }} />
+
             <FilterSection title="CRM Experience" items={CRM_OPTIONS} selected={selCRM} toggle={toggle(setSelCRM)} />
             <FilterSection title="Time Zone" items={TZ_OPTIONS} selected={selTZ} toggle={toggle(setSelTZ)} />
             <FilterSection title="Region" items={REGION_OPTIONS} selected={selRegions} toggle={toggle(setSelRegions)} />
@@ -358,7 +379,6 @@ export default function BenchPage({ params }: { params: { token: string } }) {
               </div>
             )}
 
-            {/* Search bar */}
             <div style={{ marginBottom: 16 }}>
               <input
                 type="text"
@@ -381,12 +401,14 @@ export default function BenchPage({ params }: { params: { token: string } }) {
                 const crms = crmTags(c)
                 const skills = otherSkillTags(c)
                 const region = (c as CandidateWithRegion)._region
+                const isSmBookmarked = smBookmarks.includes(c.id)
+                const isClientBookmarked = clientBookmarks.includes(c.id)
 
                 return (
                   <div key={c.id} className="card-h" style={{
                     background: '#13112a',
-                    border: `1px solid ${isOpen ? '#3730a3' : '#1e1b4b'}`,
-                    borderRadius: 13, padding: '18px 20px', transition: 'border-color .15s',
+                    border: `1px solid ${isOpen ? '#3730a3' : isSmBookmarked ? 'rgba(99,102,241,0.35)' : '#1e1b4b'}`,
+                    borderRadius: 13, padding: '18px 20px', transition: 'border-color .15s', position: 'relative',
                   }}>
                     <div style={{ display: 'flex', alignItems: 'flex-start', gap: 14 }}>
                       {/* Avatar */}
@@ -401,21 +423,17 @@ export default function BenchPage({ params }: { params: { token: string } }) {
                       </div>
 
                       <div style={{ flex: 1, minWidth: 0 }}>
-                        <div style={{ fontSize: 14, fontWeight: 600, color: '#f1f5f9', marginBottom: 5, display: 'flex', alignItems: 'center', gap: 8 }}>
+                        <div style={{ fontSize: 14, fontWeight: 600, color: '#f1f5f9', marginBottom: 5, display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
                           {c.first_name} {c.last_name}
-                          {bookmarkedIds.includes(c.id) && (
-                            <span style={{ fontSize: 11, color: '#a5b4fc', background: 'rgba(99,102,241,0.15)', border: '1px solid rgba(99,102,241,0.3)', borderRadius: 4, padding: '1px 6px' }}>★ Bookmarked</span>
+                          {isSmBookmarked && (
+                            <span style={{ fontSize: 10, color: '#a5b4fc', background: 'rgba(99,102,241,0.15)', border: '1px solid rgba(99,102,241,0.3)', borderRadius: 4, padding: '1px 7px', whiteSpace: 'nowrap' }}>★ Sales Momentum pick</span>
                           )}
                         </div>
 
                         <div style={{ display: 'flex', gap: 7, alignItems: 'center', flexWrap: 'wrap', marginBottom: 10 }}>
                           <span style={{ fontSize: 11, color: '#6b7280' }}>{region}</span>
-                          {c.location && (
-                            <><span style={{ color: '#2e2860' }}>·</span><span style={{ fontSize: 11, color: '#6b7280' }}>{c.location}</span></>
-                          )}
-                          {c.time_zones?.length > 0 && (
-                            <><span style={{ color: '#2e2860' }}>·</span><span style={{ fontSize: 11, color: '#6b7280' }}>{c.time_zones.join(', ')}</span></>
-                          )}
+                          {c.location && <><span style={{ color: '#2e2860' }}>·</span><span style={{ fontSize: 11, color: '#6b7280' }}>{c.location}</span></>}
+                          {c.time_zones?.length > 0 && <><span style={{ color: '#2e2860' }}>·</span><span style={{ fontSize: 11, color: '#6b7280' }}>{c.time_zones.join(', ')}</span></>}
                           {crms.length > 0 && (
                             <><span style={{ color: '#2e2860' }}>·</span>
                             {crms.map(cr => (
@@ -433,6 +451,22 @@ export default function BenchPage({ params }: { params: { token: string } }) {
                           </div>
                         )}
                       </div>
+
+                      {/* Client bookmark button */}
+                      <button
+                        className="bm-btn"
+                        onClick={e => { e.stopPropagation(); toggleClientBookmark(c.id) }}
+                        title={isClientBookmarked ? 'Remove from your bookmarks' : 'Save to your bookmarks'}
+                        style={{
+                          background: 'none', border: 'none', cursor: 'pointer', flexShrink: 0,
+                          fontSize: 18, lineHeight: 1, padding: 4,
+                          opacity: isClientBookmarked ? 1 : 0.3,
+                          color: isClientBookmarked ? '#a5b4fc' : '#6b7280',
+                          transition: 'opacity .15s, color .15s',
+                        }}
+                      >
+                        🔖
+                      </button>
                     </div>
 
                     {/* Summary always visible */}
@@ -440,14 +474,13 @@ export default function BenchPage({ params }: { params: { token: string } }) {
                       <p style={{ fontSize: 12, color: '#9ca3af', lineHeight: 1.75, marginTop: 14 }}>{c.recap_summary}</p>
                     )}
 
-                    {/* Dropdown only for links */}
+                    {/* View links dropdown */}
                     {(c.fathom_recording_url || (c as any).recap_doc_url || c.resume_drive_url || c.social_url) && (
                       <>
                         <div onClick={() => setExpanded(isOpen ? null : c.id)} style={{ display: 'flex', alignItems: 'center', gap: 5, marginTop: 12, cursor: 'pointer', width: 'fit-content' }}>
                           <span style={{ fontSize: 11, color: '#6366f1' }}>{isOpen ? 'Hide links' : 'View links'}</span>
                           <span style={{ fontSize: 10, color: '#6366f1', transform: isOpen ? 'rotate(180deg)' : 'none', display: 'inline-block', transition: 'transform .15s' }}>▾</span>
                         </div>
-
                         {isOpen && (
                           <div style={{ marginTop: 10, paddingTop: 10, borderTop: '1px solid #1e1b4b' }}>
                             <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap' }}>
