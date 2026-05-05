@@ -477,19 +477,16 @@ export default function BenchPage({ params }: { params: { token: string } }) {
 
                     {/* View More dropdown */}
                     <div style={{ marginTop: 12, display: 'flex', alignItems: 'center', gap: 8 }}>
-                      <div onClick={() => { setExpanded(isOpen ? null : c.id); if (infoExpanded === c.id) setInfoExpanded(null) }} style={{ display: 'flex', alignItems: 'center', gap: 5, cursor: 'pointer' }}>
+                      <div onClick={() => { setExpanded(isOpen ? null : c.id); if (!isOpen) setInfoExpanded(null) }} style={{ display: 'flex', alignItems: 'center', gap: 5, cursor: 'pointer' }}>
                         <span style={{ fontSize: 11, color: '#6366f1' }}>{isOpen ? 'View less' : 'View more'}</span>
                         <span style={{ fontSize: 10, color: '#6366f1', transform: isOpen ? 'rotate(180deg)' : 'none', display: 'inline-block', transition: 'transform .15s' }}>▾</span>
                       </div>
-                      <div onClick={() => { setInfoExpanded(infoExpanded === c.id ? null : c.id); if (isOpen) setExpanded(null) }} style={{ display: 'flex', alignItems: 'center', gap: 5, cursor: 'pointer', marginLeft: 4 }}>
-                        <span style={{ fontSize: 11, color: '#6366f1' }}>{infoExpanded === c.id ? '− Info' : '+ Info'}</span>
-                      </div>
                     </div>
 
-                    {/* View More — links */}
+                    {/* View More — links + Info button */}
                     {isOpen && (
                       <div style={{ marginTop: 10, paddingTop: 10, borderTop: '1px solid #1e1b4b' }}>
-                        <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap' }}>
+                        <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap', alignItems: 'center' }}>
                           {c.fathom_recording_url && (
                             <a href={c.fathom_recording_url} target="_blank" rel="noreferrer" className="lnk" style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 11, color: '#a5b4fc', background: 'rgba(99,102,241,0.1)', border: '1px solid rgba(99,102,241,0.25)', borderRadius: 6, padding: '6px 12px', transition: 'background .15s' }}>
                               ▶ Screening Recording
@@ -510,27 +507,34 @@ export default function BenchPage({ params }: { params: { token: string } }) {
                               ↗ LinkedIn
                             </a>
                           )}
+                          {/* + Info button */}
+                          <button
+                            onClick={e => { e.stopPropagation(); setInfoExpanded(infoExpanded === c.id ? null : c.id) }}
+                            style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 11, color: infoExpanded === c.id ? '#ffffff' : '#a5b4fc', background: infoExpanded === c.id ? 'rgba(99,102,241,0.3)' : 'rgba(99,102,241,0.1)', border: '1px solid rgba(99,102,241,0.25)', borderRadius: 6, padding: '6px 12px', cursor: 'pointer', fontFamily: 'inherit', transition: 'all .15s' }}
+                          >
+                            {infoExpanded === c.id ? '− Info' : '+ Info'}
+                          </button>
                         </div>
-                      </div>
-                    )}
 
-                    {/* + Info — form answers */}
-                    {infoExpanded === c.id && (
-                      <div style={{ marginTop: 10, paddingTop: 14, borderTop: '1px solid #1e1b4b' }}>
-                        {[
-                          { label: 'RevOps / CRM background', value: c.revops_background },
-                          { label: 'CRM & HubSpot experience', value: c.crm_experience },
-                          { label: 'HubSpot areas confident in', value: c.hubspot_areas?.join(', ') },
-                          { label: 'Project they\'re proud of', value: c.proud_project },
-                          { label: 'Desired salary', value: c.desired_salary },
-                          { label: 'Location', value: c.location },
-                          { label: 'Time zones', value: c.time_zones?.join(', ') },
-                        ].filter(f => f.value).map(f => (
-                          <div key={f.label} style={{ marginBottom: 14 }}>
-                            <div style={{ fontSize: 10, fontWeight: 600, color: '#4b5563', letterSpacing: '.08em', textTransform: 'uppercase', marginBottom: 5 }}>{f.label}</div>
-                            <p style={{ fontSize: 12, color: '#9ca3af', lineHeight: 1.7, margin: 0 }}>{f.value}</p>
+                        {/* Info panel */}
+                        {infoExpanded === c.id && (
+                          <div style={{ marginTop: 16, paddingTop: 14, borderTop: '1px solid #1e1b4b' }}>
+                            {[
+                              { label: 'RevOps / CRM background', value: c.revops_background },
+                              { label: 'CRM & HubSpot experience', value: c.crm_experience },
+                              { label: 'HubSpot areas confident in', value: c.hubspot_areas?.join(', ') },
+                              { label: 'Project they\'re proud of', value: c.proud_project },
+                              { label: 'Desired salary', value: c.desired_salary },
+                              { label: 'Location', value: c.location },
+                              { label: 'Time zones', value: c.time_zones?.join(', ') },
+                            ].filter(f => f.value).map(f => (
+                              <div key={f.label} style={{ marginBottom: 14 }}>
+                                <div style={{ fontSize: 10, fontWeight: 600, color: '#4b5563', letterSpacing: '.08em', textTransform: 'uppercase', marginBottom: 5 }}>{f.label}</div>
+                                <p style={{ fontSize: 12, color: '#9ca3af', lineHeight: 1.7, margin: 0 }}>{f.value}</p>
+                              </div>
+                            ))}
                           </div>
-                        ))}
+                        )}
                       </div>
                     )}
                   </div>
