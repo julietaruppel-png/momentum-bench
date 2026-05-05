@@ -5,9 +5,21 @@ import { Candidate, ClientToken } from '@/lib/types'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 
+type PartialCandidate = {
+  id: string
+  first_name: string
+  last_name: string
+  location: string | null
+  skill_hubspot: boolean
+  skill_salesforce: boolean
+  skill_zoho: boolean
+  skill_pipedrive: boolean
+  skill_gohighlevel: boolean
+}
+
 export default function BookmarksPage({ params }: { params: { id: string } }) {
   const [token, setToken] = useState<ClientToken | null>(null)
-  const [candidates, setCandidates] = useState<Partial<Candidate>[]>([])
+  const [candidates, setCandidates] = useState<PartialCandidate[]>([])
   const [bookmarked, setBookmarked] = useState<string[]>([])
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
@@ -24,7 +36,7 @@ export default function BookmarksPage({ params }: { params: { id: string } }) {
         setToken(tok)
         setBookmarked((tok as any).bookmarked_candidates ?? [])
       }
-      setCandidates(cands ?? [])
+      setCandidates((cands ?? []) as PartialCandidate[])
       setLoading(false)
     }
     load()
@@ -45,12 +57,11 @@ export default function BookmarksPage({ params }: { params: { id: string } }) {
     router.push('/admin/tokens')
   }
 
-  const filtered = candidates.filter(c => {
-    if (!search) return true
-    return `${c.first_name ?? ''} ${c.last_name ?? ''}`.toLowerCase().includes(search.toLowerCase())
-  })
+  const filtered = candidates.filter(c =>
+    !search || `${c.first_name} ${c.last_name}`.toLowerCase().includes(search.toLowerCase())
+  )
 
-  const crmTags = (c: Partial<Candidate>) => [
+  const crmTags = (c: PartialCandidate) => [
     c.skill_hubspot && 'HubSpot', c.skill_salesforce && 'Salesforce',
     c.skill_zoho && 'Zoho', c.skill_pipedrive && 'Pipedrive', c.skill_gohighlevel && 'GoHighLevel',
   ].filter(Boolean) as string[]
@@ -73,7 +84,7 @@ export default function BookmarksPage({ params }: { params: { id: string } }) {
               Select candidates to bookmark for {token?.client_name}
             </div>
             <div style={{ fontSize: 13, color: '#888' }}>
-              Bookmarked candidates appear at the top of the bench for this client. {bookmarked.length} selected.
+              Bookmarked candidates appear highlighted on the bench. {bookmarked.length} selected.
             </div>
           </div>
 
@@ -124,7 +135,7 @@ export default function BookmarksPage({ params }: { params: { id: string } }) {
   )
 }
 
-function CandidateRow({ c, checked, toggle, crms }: { c: Partial<Candidate>; checked: boolean; toggle: (id: string) => void; crms: string[] }) {
+function CandidateRow({ c, checked, toggle, crms }: { c: PartialCandidate; checked: boolean; toggle: (id: string) => void; crms: string[] }) {
   return (
     <div
       onClick={() => toggle(c.id)}
@@ -132,7 +143,7 @@ function CandidateRow({ c, checked, toggle, crms }: { c: Partial<Candidate>; che
         display: 'flex', alignItems: 'center', gap: 12, padding: '10px 14px',
         border: `1px solid ${checked ? '#5b4de8' : '#e8e8e8'}`,
         borderRadius: 8, cursor: 'pointer', background: checked ? '#f5f3ff' : '#fafafa',
-        transition: 'all 0.15s',
+        transition: 'all 0.15s', marginBottom: 4,
       }}
     >
       <div style={{
