@@ -153,7 +153,8 @@ export default function BenchPage({ params }: { params: { token: string } }) {
       const stored = localStorage.getItem(`bookmarks_${params.token}`)
       if (stored) setClientBookmarks(JSON.parse(stored))
       const { data } = await supabase.from('candidates').select('*').order('first_name')
-      setCandidates(data ?? [])
+      // Hide archived candidates from the client-facing bench
+      setCandidates((data ?? []).filter(c => !(c as any).is_archived))
       setLoading(false)
     }
     load()
